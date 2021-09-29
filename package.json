@@ -1,0 +1,29 @@
+{
+  "name": "web-shell-engine",
+  "version": "0.0.1",
+  "description": "Web Shell Engine",
+  "private": true,
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "esbuild --bundle --minify --sourcemap ./src/web_shell.ts --outfile=dist/main.js --format=esm"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ianling/web-shell-engine.git"
+  },
+  "author": "Ian Ling (ian@iancaling.com)",
+  "license": "AGPL-3.0-or-later",
+  "bugs": {
+    "url": "https://github.com/ianling/web-shell-engine/issues"
+  },
+  "homepage": "https://github.com/ianling/web-shell-engine#readme",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^4.31.2",
+    "@typescript-eslint/parser": "^4.31.2",
+    "esbuild": "^0.13.2",
+    "eslint": "^7.32.0",
+    "eslint-config-google": "^0.14.0",
+    "ts-loader": "^9.2.6",
+    "typescript": "^4.4.3"
+  }
+}
