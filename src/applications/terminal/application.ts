@@ -1,4 +1,4 @@
-import {BaseApplication} from '../base_application';
+import {BaseTextApplication} from '../base_text_application';
 import {sleep} from '../../util';
 import {time, echo, clear, clearLine, disableInput, enableInput, sleep as sleepCommand} from './builtin_commands';
 
@@ -11,22 +11,17 @@ export type TerminalCommandCallback = (terminal: TerminalApplication, ...args: s
 /**
  * Terminal
  */
-export class TerminalApplication extends BaseApplication {
+export class TerminalApplication extends BaseTextApplication {
     private cursor: string;
-    private window: HTMLDivElement;
     private commands: Map<string, TerminalCommandCallback>;
-    private inputEnabled: boolean;
     private disableInputAfterCommand: boolean;
     private inputHistory: string[];
     private inputHistoryIndex: number;
-    private inputBuffer: string;
-    private windowBuffer: string;
 
     constructor() {
         super('Terminal', '1.0.0', 'Terminal');
 
         this.cursor = '_';
-
         this.inputEnabled = false;
         this.disableInputAfterCommand = true;
 
@@ -35,11 +30,6 @@ export class TerminalApplication extends BaseApplication {
 
         this.inputHistory = [];
         this.inputHistoryIndex = 0;
-
-        this.inputBuffer = '';
-
-        this.window = document.body.appendChild(document.createElement('div'));
-        this.window.setAttribute('id', 'application-window-terminal');
 
         this.windowBuffer = terminalStartupText;
     }
@@ -58,40 +48,6 @@ export class TerminalApplication extends BaseApplication {
         this.commands.set(command, fn);
     }
 
-    backspace(n = 1) {
-        this.window.innerText = this.window.innerText.slice(0, -n);
-    }
-
-    /**
-     * Inserts the given string into the window div.
-     * @param {string} str
-     * @private
-     */
-    private addText(str: string) {
-        this.window.innerText += str;
-        this.window.scrollTop = this.window.scrollHeight;
-    }
-
-    /**
-     * Adds the given string(s) to the window buffer to be processed and either executed (if it contains a command)
-     * or displayed.
-     * If more than one string is given, they will be joined by a space.
-     * @param {...string[]} strings
-     */
-    echo(...strings: string[]) {
-        const stringToAdd = strings.reduce((previousValue, currentValue) => `${previousValue} ${currentValue}`);
-        this.windowBuffer += stringToAdd;
-    }
-
-    clear() {
-        this.window.innerText = '';
-    }
-
-    clearLine() {
-        const lineStartIndex = this.window.innerText.lastIndexOf('\n');
-        this.window.innerText = this.window.innerText.slice(0, lineStartIndex + 1);
-    }
-
     disableInput() {
         if (this.inputEnabled) {
             this.inputEnabled = false;
@@ -108,6 +64,7 @@ export class TerminalApplication extends BaseApplication {
         }
     }
 
+    // TODO
     async getUserInput(timeout = 60) {
         const key = null;
 
