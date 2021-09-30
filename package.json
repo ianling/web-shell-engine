@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "esbuild --bundle --minify --sourcemap ./src/web_shell.ts --outfile=dist/main.js --format=esm"
+    "build": "tsc && esbuild --bundle --minify --sourcemap ./src/web_shell.ts --outfile=dist/main.js --format=esm"
   },
   "repository": {
     "type": "git",
