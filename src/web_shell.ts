@@ -1,14 +1,6 @@
-/**
-* web shell engine
-* (c) Ian Ling 2021
-* This source code is released to the public under the GNU General Public License (GPL).
-***/
-
-import BaseApplication from './applications/base_application';
+import {BaseApplication} from './applications/base_application';
 import {TerminalApplication} from './applications/terminal/application';
 import {EmailApplication} from './applications/email/application';
-
-import {sleep} from './util';
 
 export class Webshell {
     private runningApplications: BaseApplication[];
@@ -39,10 +31,8 @@ export class Webshell {
     async keyboardHandler(e: KeyboardEvent) {
         e.preventDefault();
 
-        if (this.focusedApplication != undefined) {
-            await this.focusedApplication.keyboardHandler(e);
-            return;
-        }
+        await this.focusedApplication?.keyboardHandler(e);
+        return;
     }
 
     async start() {

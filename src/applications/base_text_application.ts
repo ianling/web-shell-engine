@@ -31,6 +31,9 @@ export abstract class BaseTextApplication extends BaseApplication {
     public close() {
         super.close();
 
+        this.inputBuffer = '';
+        this.windowBuffer = '';
+
         document.body.removeChild(this.window);
     }
 
