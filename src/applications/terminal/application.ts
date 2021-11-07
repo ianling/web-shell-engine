@@ -1,6 +1,10 @@
 import {BaseTextApplication} from '../base_text_application';
 import {sleep} from '../../util';
-import {time, echo, clear, clearLine, disableInput, enableInput, sleep as sleepCommand} from './builtin_commands';
+import {help, time, echo, clear, clearLine, disableInput, enableInput, sleep as sleepCommand,
+    timeHelpText, echoHelpText, clearHelpText, clearLineHelpText, disableInputHelpText, enableInputHelpText,
+    sleepHelpText, timeBriefDescription, echoBriefDescription, clearBriefDescription, clearLineBriefDescription,
+    disableInputBriefDescription, enableInputBriefDescription, sleepBriefDescription, helpHelpText,
+    helpBriefDescription} from './builtin_commands';
 
 // text displayed when the terminal is first loaded
 const terminalStartupText = 'INITIALIZING|sleep,400|.|sleep,400|.|sleep,400|.|sleep,300||clearline|' +
@@ -8,12 +12,23 @@ const terminalStartupText = 'INITIALIZING|sleep,400|.|sleep,400|.|sleep,400|.|sl
 
 export type TerminalCommandCallback = (terminal: TerminalApplication, ...args: string[]) => Promise<string>;
 
+interface TerminalCommand {
+    // the actual command that must be entered by the user in order to trigger the callback
+    command: string,
+    // brief description of the command displayed next to the command in the command list
+    briefDescription: string
+    // optional help text for the command when the user runs "help <command>"
+    helpText?: string
+    // the function that is run when the command is entered
+    callback: TerminalCommandCallback,
+}
+
 /**
  * Terminal
  */
 export class TerminalApplication extends BaseTextApplication {
     private cursor: string;
-    private commands: Map<string, TerminalCommandCallback>;
+    public commands: Map<string, TerminalCommand>;
     private disableInputAfterCommand: boolean;
     private inputHistory: string[];
     private inputHistoryIndex: number;
@@ -25,7 +40,7 @@ export class TerminalApplication extends BaseTextApplication {
         this.inputEnabled = false;
         this.disableInputAfterCommand = true;
 
-        this.commands = new Map<string, TerminalCommandCallback>();
+        this.commands = new Map<string, TerminalCommand>();
         this.registerBuiltinCommands();
 
         this.inputHistory = [];
@@ -35,17 +50,19 @@ export class TerminalApplication extends BaseTextApplication {
     }
 
     private registerBuiltinCommands() {
-        this.registerCommandCallback('time', time);
-        this.registerCommandCallback('echo', echo);
-        this.registerCommandCallback('clear', clear);
-        this.registerCommandCallback('clearline', clearLine);
-        this.registerCommandCallback('enableinput', enableInput);
-        this.registerCommandCallback('disableinput', disableInput);
-        this.registerCommandCallback('sleep', sleepCommand);
+        this.registerCommandCallback('help', help, helpBriefDescription, helpHelpText);
+        this.registerCommandCallback('time', time, timeBriefDescription, timeHelpText);
+        this.registerCommandCallback('echo', echo, echoBriefDescription, echoHelpText);
+        this.registerCommandCallback('clear', clear, clearBriefDescription, clearHelpText);
+        this.registerCommandCallback('clearline', clearLine, clearLineBriefDescription, clearLineHelpText);
+        this.registerCommandCallback('enableinput', enableInput, enableInputBriefDescription, enableInputHelpText);
+        this.registerCommandCallback('disableinput', disableInput, disableInputBriefDescription, disableInputHelpText);
+        this.registerCommandCallback('sleep', sleepCommand, sleepBriefDescription, sleepHelpText);
     }
 
-    registerCommandCallback(command: string, fn: TerminalCommandCallback) {
-        this.commands.set(command, fn);
+    registerCommandCallback(command: string, callback: TerminalCommandCallback,
+        briefDescription: string, helpText: string) {
+        this.commands.set(command, {command, callback, helpText, briefDescription});
     }
 
     disableInput() {
@@ -80,7 +97,8 @@ export class TerminalApplication extends BaseTextApplication {
         this.inputHistoryIndex = this.inputHistory.length - 1;
         const commandSplit = command.split(' ');
 
-        return this.commands.get(commandSplit[0])?.(this, ...commandSplit) || `Unknown command '${commandSplit[0]}'`;
+        return this.commands.get(commandSplit[0])?.callback(this, ...commandSplit) ||
+            `Unknown command '${commandSplit[0]}'`;
     }
 
     async keyboardHandler(e: KeyboardEvent) {
@@ -222,7 +240,7 @@ export class TerminalApplication extends BaseTextApplication {
                 break;
             default:
                 // check if command was registered by something else
-                await this.commands.get(command[0])?.(this, ...command);
+                await this.commands.get(command[0])?.callback(this, ...command);
         }
 
         this.windowBuffer = this.windowBuffer.slice(cmdEndIndex + 1);

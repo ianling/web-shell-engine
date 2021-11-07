@@ -41,11 +41,12 @@ export class Webshell {
         const terminal = new TerminalApplication();
 
         // register commands that allow us to start other applications from the terminal
+        const emailCommandText = 'launches the email application';
         terminal.registerCommandCallback('email', async () => {
             this.startApplication(new EmailApplication());
 
             return '';
-        });
+        }, emailCommandText, emailCommandText);
 
         this.startApplication(terminal);
     }
