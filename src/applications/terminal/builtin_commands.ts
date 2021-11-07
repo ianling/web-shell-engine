@@ -43,6 +43,19 @@ export async function echo(terminal: TerminalApplication, ...args: string[]) {
     return args.slice(1).join(' ');
 }
 
+export const textSpeedBriefDescription = 'prints the current text speed multiplier, or sets the multiplier to ' +
+    'the given value';
+export const textSpeedHelpText = `usage: textspeed [multiplier]`;
+export async function textSpeed(terminal: TerminalApplication, ...args: string[]) {
+    if (args.length > 1) {
+        const speed = parseInt(args[1]) || 1;
+        terminal.setTextSpeed(speed);
+        return '';
+    }
+
+    return `${terminal.getTextSpeed()}`;
+}
+
 export const clearBriefDescription = 'clears all text from the screen';
 export const clearHelpText = clearBriefDescription;
 export async function clear(terminal: TerminalApplication) {

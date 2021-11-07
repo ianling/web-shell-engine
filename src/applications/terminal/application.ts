@@ -1,10 +1,12 @@
 import {BaseTextApplication} from '../base_text_application';
 import {sleep} from '../../util';
 import {help, time, echo, clear, clearLine, disableInput, enableInput, sleep as sleepCommand,
-    timeHelpText, echoHelpText, clearHelpText, clearLineHelpText, disableInputHelpText, enableInputHelpText,
-    sleepHelpText, timeBriefDescription, echoBriefDescription, clearBriefDescription, clearLineBriefDescription,
-    disableInputBriefDescription, enableInputBriefDescription, sleepBriefDescription, helpHelpText,
-    helpBriefDescription} from './builtin_commands';
+    textSpeed as textSpeedCommand, timeHelpText, echoHelpText, clearHelpText, clearLineHelpText, disableInputHelpText,
+    enableInputHelpText, sleepHelpText, timeBriefDescription, echoBriefDescription, clearBriefDescription,
+    clearLineBriefDescription, disableInputBriefDescription, enableInputBriefDescription, sleepBriefDescription,
+    helpHelpText, helpBriefDescription, textSpeedBriefDescription, textSpeedHelpText} from './builtin_commands';
+
+const defaultTextSpeed = 1;
 
 // text displayed when the terminal is first loaded
 const terminalStartupText = 'INITIALIZING|sleep,400|.|sleep,400|.|sleep,400|.|sleep,300||clearline|' +
@@ -32,6 +34,8 @@ export class TerminalApplication extends BaseTextApplication {
     private disableInputAfterCommand: boolean;
     private inputHistory: string[];
     private inputHistoryIndex: number;
+    private textSpeed: number;
+    private previousTextSpeed: number;
 
     constructor() {
         super('Terminal', '1.0.0', 'Terminal');
@@ -39,6 +43,8 @@ export class TerminalApplication extends BaseTextApplication {
         this.cursor = '_';
         this.inputEnabled = false;
         this.disableInputAfterCommand = true;
+        this.textSpeed = defaultTextSpeed;
+        this.previousTextSpeed = defaultTextSpeed;
 
         this.commands = new Map<string, TerminalCommand>();
         this.registerBuiltinCommands();
@@ -58,11 +64,27 @@ export class TerminalApplication extends BaseTextApplication {
         this.registerCommandCallback('enableinput', enableInput, enableInputBriefDescription, enableInputHelpText);
         this.registerCommandCallback('disableinput', disableInput, disableInputBriefDescription, disableInputHelpText);
         this.registerCommandCallback('sleep', sleepCommand, sleepBriefDescription, sleepHelpText);
+        this.registerCommandCallback('textspeed', textSpeedCommand, textSpeedBriefDescription, textSpeedHelpText);
     }
 
     registerCommandCallback(command: string, callback: TerminalCommandCallback,
         briefDescription: string, helpText: string) {
         this.commands.set(command, {command, callback, helpText, briefDescription});
+    }
+
+    setTextSpeed(speed: number) {
+        // track the previous text speed so we can reset back to that value after a temporary speed change
+        // TODO: allow this to happen
+        this.previousTextSpeed = this.textSpeed;
+        this.textSpeed = speed;
+    }
+
+    getTextSpeed(): number {
+        return this.textSpeed;
+    }
+
+    resetTextSpeed() {
+        this.setTextSpeed(defaultTextSpeed);
     }
 
     disableInput() {
@@ -217,8 +239,9 @@ export class TerminalApplication extends BaseTextApplication {
         // TODO: allow escaping pipe character to avoid accidentally executing a command
         if (this.windowBuffer[0] !== '|') {
             // just print the current character if it was not a command
-            // insert a random delay between character prints for added effect
-            await sleep(Math.random() * 30);
+            // insert a random delay between character prints for added effect.
+            // the length of the delay is inversely proportional to the terminal's textSpeed field
+            await sleep(Math.random() * 30 * (1 / this.getTextSpeed()));
             this.addText(this.windowBuffer[0]);
 
             this.windowBuffer = this.windowBuffer.slice(1);
