@@ -6,8 +6,6 @@ import {help, time, echo, clear, clearLine, disableInput, enableInput, sleep as 
     clearLineBriefDescription, disableInputBriefDescription, enableInputBriefDescription, sleepBriefDescription,
     helpHelpText, helpBriefDescription, textSpeedBriefDescription, textSpeedHelpText} from './builtin_commands';
 
-const defaultTextSpeed = 1;
-
 // text displayed when the terminal is first loaded
 const terminalStartupText = 'INITIALIZING|sleep,400|.|sleep,400|.|sleep,400|.|sleep,300||clearline|' +
     'Welcome to web-shell!\nType \'help\' for commands\n|enableinput|';
@@ -34,8 +32,7 @@ export class TerminalApplication extends BaseTextApplication {
     private disableInputAfterCommand: boolean;
     private inputHistory: string[];
     private inputHistoryIndex: number;
-    private textSpeed: number;
-    private previousTextSpeed: number;
+    private isFlushing: boolean;
 
     constructor() {
         super('Terminal', '1.0.0', 'Terminal');
@@ -43,8 +40,7 @@ export class TerminalApplication extends BaseTextApplication {
         this.cursor = '_';
         this.inputEnabled = false;
         this.disableInputAfterCommand = true;
-        this.textSpeed = defaultTextSpeed;
-        this.previousTextSpeed = defaultTextSpeed;
+        this.isFlushing = false;
 
         this.commands = new Map<string, TerminalCommand>();
         this.registerBuiltinCommands();
@@ -70,21 +66,6 @@ export class TerminalApplication extends BaseTextApplication {
     registerCommandCallback(command: string, callback: TerminalCommandCallback,
         briefDescription: string, helpText: string) {
         this.commands.set(command, {command, callback, helpText, briefDescription});
-    }
-
-    setTextSpeed(speed: number) {
-        // track the previous text speed so we can reset back to that value after a temporary speed change
-        // TODO: allow this to happen
-        this.previousTextSpeed = this.textSpeed;
-        this.textSpeed = speed;
-    }
-
-    getTextSpeed(): number {
-        return this.textSpeed;
-    }
-
-    resetTextSpeed() {
-        this.setTextSpeed(defaultTextSpeed);
     }
 
     disableInput() {
@@ -124,7 +105,10 @@ export class TerminalApplication extends BaseTextApplication {
     }
 
     async keyboardHandler(e: KeyboardEvent) {
-        if (!this.inputEnabled) {
+        if (!this.inputEnabled && e.key !== 'Enter') {
+            return;
+        } else if (!this.inputEnabled && e.key === 'Enter') {
+            this.flushWindowBuffer();
             return;
         }
 
@@ -230,7 +214,7 @@ export class TerminalApplication extends BaseTextApplication {
         }
     }
 
-    async mainLoop() {
+    async handleWindowBufferCharacter() {
         if (this.windowBuffer.length === 0) {
             return;
         }
@@ -239,9 +223,11 @@ export class TerminalApplication extends BaseTextApplication {
         // TODO: allow escaping pipe character to avoid accidentally executing a command
         if (this.windowBuffer[0] !== '|') {
             // just print the current character if it was not a command
-            // insert a random delay between character prints for added effect.
+            // insert a random delay between character prints for added effect if we are not flushing the buffer.
             // the length of the delay is inversely proportional to the terminal's textSpeed field
-            await sleep(Math.random() * 30 * (1 / this.getTextSpeed()));
+            if (!this.isFlushing) {
+                await sleep(Math.random() * 30 * (1 / this.getTextSpeed()));
+            }
             this.addText(this.windowBuffer[0]);
 
             this.windowBuffer = this.windowBuffer.slice(1);
@@ -267,5 +253,30 @@ export class TerminalApplication extends BaseTextApplication {
         }
 
         this.windowBuffer = this.windowBuffer.slice(cmdEndIndex + 1);
+    }
+
+    async mainLoop() {
+        if (this.shouldFlushWindowBufferOnNextFrame) {
+            this.isFlushing = true;
+            // we can't just print all the text from the window buffer straight to the screen, it might contain commands
+            while (this.windowBuffer.length > 0) {
+                const firstCommandCharacter = this.windowBuffer.indexOf('|');
+
+                if (firstCommandCharacter === -1) {
+                    this.addText(this.windowBuffer);
+                    this.windowBuffer = '';
+                    break;
+                } else {
+                    this.addText(this.windowBuffer.slice(0, firstCommandCharacter));
+                    this.windowBuffer = this.windowBuffer.slice(firstCommandCharacter);
+                }
+
+                await this.handleWindowBufferCharacter();
+            }
+            this.isFlushing = false;
+            this.shouldFlushWindowBufferOnNextFrame = false;
+        }
+
+        await this.handleWindowBufferCharacter();
     }
 }

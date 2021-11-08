@@ -1,6 +1,8 @@
 import {BaseApplication} from './base_application';
 import {sleep} from '../util';
 
+const defaultTextSpeed = 1;
+
 /**
  * BaseTextApplication is an abstract base class that extends BaseApplication to provide a base for
  * text-based applications.
@@ -16,6 +18,9 @@ export abstract class BaseTextApplication extends BaseApplication {
     protected inputBuffer: string;
     protected windowBuffer: string;
     protected inputEnabled: boolean;
+    protected shouldFlushWindowBufferOnNextFrame: boolean;
+    protected textSpeed: number;
+    protected previousTextSpeed: number;
 
     protected constructor(name: string, version: string, description: string) {
         super(name, version, description);
@@ -23,6 +28,9 @@ export abstract class BaseTextApplication extends BaseApplication {
         this.inputEnabled = true;
         this.inputBuffer = '';
         this.windowBuffer = '';
+        this.shouldFlushWindowBufferOnNextFrame = false;
+        this.textSpeed = defaultTextSpeed;
+        this.previousTextSpeed = defaultTextSpeed;
 
         this.window = document.body.appendChild(document.createElement('div'));
         this.window.setAttribute('id', `application-window-${this.getName()}`);
@@ -66,6 +74,13 @@ export abstract class BaseTextApplication extends BaseApplication {
     }
 
     /**
+     * Sets a flag that will cause all text in the window buffer to be instantly displayed on the next frame.
+     */
+    flushWindowBuffer() {
+        this.shouldFlushWindowBufferOnNextFrame = true;
+    }
+
+    /**
      * Clears the window div completely.
      */
     clear() {
@@ -94,6 +109,21 @@ export abstract class BaseTextApplication extends BaseApplication {
         this.inputEnabled = true;
     }
 
+    setTextSpeed(speed: number) {
+        // track the previous text speed so we can reset back to that value after a temporary speed change
+        // TODO: allow this to happen
+        this.previousTextSpeed = this.textSpeed;
+        this.textSpeed = speed;
+    }
+
+    getTextSpeed(): number {
+        return this.textSpeed;
+    }
+
+    resetTextSpeed() {
+        this.setTextSpeed(defaultTextSpeed);
+    }
+
     async keyboardHandler(e: KeyboardEvent) {
         if (!this.inputEnabled) {
             return;
@@ -120,6 +150,13 @@ export abstract class BaseTextApplication extends BaseApplication {
     }
 
     async mainLoop() {
+        if (this.shouldFlushWindowBufferOnNextFrame) {
+            this.addText(this.windowBuffer);
+            this.windowBuffer = '';
+            this.shouldFlushWindowBufferOnNextFrame = false;
+            return;
+        }
+
         if (this.windowBuffer.length === 0) {
             return;
         }

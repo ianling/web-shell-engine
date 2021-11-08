@@ -44,8 +44,6 @@ export abstract class BaseApplication {
      * Applications extending BaseApplication should not override `run`.
      */
     async run() {
-        console.log('inside application.run');
-
         while (this.running) {
             await this.mainLoop();
 
