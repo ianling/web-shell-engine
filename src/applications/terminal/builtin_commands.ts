@@ -19,7 +19,7 @@ export async function help(terminal: TerminalApplication, ...args: string[]) {
     }
 
     // if no specific command was specified, return a list of all available commands
-    let helpText = '';
+    let helpText = 'Press <enter> again to skip ahead.\n\n';
     terminal.commands.forEach((command) => {
         helpText += `${command.command}`;
         if (command.briefDescription) {
