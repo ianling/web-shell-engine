@@ -28,7 +28,7 @@ export async function help(terminal: TerminalApplication, ...args: string[]) {
         helpText += '\n';
     });
 
-    return helpText;
+    return helpText.trimEnd();
 }
 
 export const timeBriefDescription = 'prints the current Unix timestamp to the screen';

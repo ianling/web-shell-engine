@@ -28,6 +28,7 @@ interface TerminalCommand {
  */
 export class TerminalApplication extends BaseTextApplication {
     private cursor: string;
+    private prompt: string;
     public commands: Map<string, TerminalCommand>;
     private disableInputAfterCommand: boolean;
     private inputHistory: string[];
@@ -38,6 +39,7 @@ export class TerminalApplication extends BaseTextApplication {
         super('Terminal', '1.0.0', 'Terminal');
 
         this.cursor = '_';
+        this.prompt = '> ';
         this.inputEnabled = false;
         this.disableInputAfterCommand = true;
         this.isFlushing = false;
@@ -79,8 +81,8 @@ export class TerminalApplication extends BaseTextApplication {
     enableInput() {
         if (!this.inputEnabled) {
             this.inputEnabled = true;
-            // insert cursor
-            this.addText(this.cursor);
+            // insert prompt and cursor
+            this.addText(`${this.prompt}${this.cursor}`);
         }
     }
 
@@ -133,7 +135,7 @@ export class TerminalApplication extends BaseTextApplication {
 
                 this.inputBuffer = '';
                 if (reEnableInputAfterCommand) {
-                    this.echo('|enableinput|');
+                    this.echo(`|enableinput|`);
                 }
 
                 break;
@@ -174,7 +176,8 @@ export class TerminalApplication extends BaseTextApplication {
                 if (this.inputHistoryIndex < this.inputHistory.length - 1) {
                     this.inputHistoryIndex += 1;
                 } else {
-                    // TODO: clear inputBuffer and current line
+                    this.inputBuffer = '';
+                    this.clearLine();
                 }
 
                 this.inputBuffer = this.inputHistory[this.inputHistoryIndex];
